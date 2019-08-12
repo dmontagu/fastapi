@@ -130,6 +130,11 @@ query_required = {
                         "msg": "value is not a valid integer",
                         "type": "type_error.integer",
                     },
+                    {
+                        "loc": ["query", "limit"],
+                        "msg": "value is not none",
+                        "type": "type_error.none.allowed",
+                    },
                 ]
             },
         ),

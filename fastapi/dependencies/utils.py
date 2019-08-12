@@ -13,6 +13,7 @@ from typing import (
     Type,
     Union,
     cast,
+    get_type_hints,
 )
 
 from fastapi import params
@@ -168,6 +169,7 @@ def get_dependant(
 ) -> Dependant:
     path_param_names = get_path_param_names(path)
     endpoint_signature = inspect.signature(call)
+    endpoint_type_hints = get_type_hints(call)
     signature_params = endpoint_signature.parameters
     dependant = Dependant(call=call, name=name, path=path, use_cache=use_cache)
     for param_name, param in signature_params.items():
@@ -181,7 +183,9 @@ def get_dependant(
             continue
         if add_non_field_param_to_dependency(param=param, dependant=dependant):
             continue
-        param_field = get_param_field(param=param, default_schema=params.Query)
+        param_field = get_param_field(
+            param=param, type_hints=endpoint_type_hints, default_schema=params.Query
+        )
         if param_name in path_param_names:
             assert param.default == param.empty or isinstance(
                 param.default, params.Path
@@ -191,6 +195,7 @@ def get_dependant(
             ), f"Path params must be of one of the supported types"
             param_field = get_param_field(
                 param=param,
+                type_hints=endpoint_type_hints,
                 default_schema=params.Path,
                 force_type=params.ParamTypes.path,
             )
@@ -233,6 +238,7 @@ def add_non_field_param_to_dependency(
 def get_param_field(
     *,
     param: inspect.Parameter,
+    type_hints: Dict[str, Any],
     default_schema: Type[params.Param] = params.Param,
     force_type: params.ParamTypes = None,
 ) -> Field:
@@ -253,7 +259,7 @@ def get_param_field(
     required = default_value == Required
     annotation: Any = Any
     if not param.annotation == param.empty:
-        annotation = param.annotation
+        annotation = type_hints.get(param.name, param.annotation)
     annotation = get_annotation_from_schema(annotation, schema)
     if not schema.alias and getattr(schema, "convert_underscores", None):
         alias = param.name.replace("_", "-")

@@ -25,6 +25,21 @@ response_not_valid_int = {
     ]
 }
 
+response_not_valid_int_optional = {
+    "detail": [
+        {
+            "loc": ["query", "query"],
+            "msg": "value is not a valid integer",
+            "type": "type_error.integer",
+        },
+        {
+            "loc": ["query", "query"],
+            "msg": "value is not none",
+            "type": "type_error.none.allowed",
+        },
+    ]
+}
+
 
 @pytest.mark.parametrize(
     "path,expected_status,expected_response",
@@ -42,7 +57,7 @@ response_not_valid_int = {
         ("/query/int?not_declared=baz", 422, response_missing),
         ("/query/int/optional", 200, "foo bar"),
         ("/query/int/optional?query=50", 200, "foo bar 50"),
-        ("/query/int/optional?query=foo", 422, response_not_valid_int),
+        ("/query/int/optional?query=foo", 422, response_not_valid_int_optional),
         ("/query/int/default", 200, "foo bar 10"),
         ("/query/int/default?query=50", 200, "foo bar 50"),
         ("/query/int/default?query=foo", 422, response_not_valid_int),
